@@ -9,55 +9,58 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      ZIP_FILE: app.zip
       VERSION_LABEL: v-${{ github.run_number }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20.17.0' # Specific Node.js version for consistency
 
-#      - name: Install dependencies with Yarn
-#        run: yarn install
-#
-#      - name: Build the NestJS app
-#        run: yarn build
-
-      - name: Zip the app
-        run: zip -r application_package.zip . -x '*.git*'
-#        run: |
-#          mkdir -p bundle
-#          cp -r dist package.json yarn.lock ecosystem.config.js node_modules bundle/
-#          cd bundle && zip -r ../$ZIP_FILE . && cd ..
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Cache Node.js modules
+        uses: actions/cache@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: Upload zip to S3
-        run: | 
-          aws s3 cp application_package.zip s3://${{ secrets.S3_BUCKET }}/application_package.zip
-#        run: aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
+      - name: Install dependencies
+        run: npm ci # Use npm ci for cleaner installs
 
-      - name: Create/ Update Elastic Beanstalk App Version
+      - name: Build the application
+        run: npm run build
+
+      - name: Clean up unnecessary files
         run: |
-          aws elasticbeanstalk create-application-version \
-            --application-name ${{ secrets.EB_APP_NAME }} \
-            --version-label $VERSION_LABEL \
-            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=application_package.zip
+          rm -rf src tests # Remove source and test files
+          find . -name "*.ts" -type f -delete # Remove TypeScript files
+
+      - name: Generate deployment package
+        run: |
+          zip -r deploy.zip dist/ node_modules/ package.json package-lock.json Procfile
+          ls -la
+
+      - name: Verify deployment package
+        run: unzip -l deploy.zip # List contents of zip for verification
+
+      - name: Validate environment variables
+        run: |
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ] || [ -z "${{ secrets.AWS_REGION }}" ]; then
+            echo "Missing required AWS secrets"
+            exit 1
+          fi
 
       - name: Deploy to Elastic Beanstalk
-        run: |
-          aws elasticbeanstalk update-environment \
-            --environment-name ${{ secrets.EB_ENV_NAME }} \
-            --version-label $VERSION_LABEL
-
-      - name: Clean up pipeline artifacts
-        run: rm -rf application_package.zip
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: nestjs-app
+          environment_name: nestjs-app-env
+          version_label: ${{ github.sha }}
+          region: ${{ secrets.AWS_REGION }}
+          deployment_package: deploy.zip
