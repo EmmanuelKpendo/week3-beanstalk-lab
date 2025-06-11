@@ -28,10 +28,11 @@ jobs:
         run: yarn build
 
       - name: Zip the app
-        run: |
-          mkdir -p bundle
-          cp -r dist package.json yarn.lock ecosystem.config.js node_modules bundle/
-          cd bundle && zip -r ../$ZIP_FILE . && cd ..
+        run: zip -r deploy_package.zip . -x '*.git*'
+#        run: |
+#          mkdir -p bundle
+#          cp -r dist package.json yarn.lock ecosystem.config.js node_modules bundle/
+#          cd bundle && zip -r ../$ZIP_FILE . && cd ..
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -41,14 +42,15 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload zip to S3
-        run: aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
+        run: aws s3 cp deploy_package.zip s3://${{ secrets.S3_BUCKET }}/deploy_package.zip
+#        run: aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
 
       - name: Create Elastic Beanstalk App Version
         run: |
           aws elasticbeanstalk create-application-version \
             --application-name ${{ secrets.EB_APP_NAME }} \
             --version-label $VERSION_LABEL \
-            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=$ZIP_FILE
+            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=deploy_package.zip
 
       - name: Deploy to Elastic Beanstalk
         run: |
