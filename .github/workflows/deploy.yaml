@@ -21,16 +21,16 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies with Yarn
+        run: yarn install --frozen-lockfile
 
       - name: Build the NestJS app
-        run: npm run build
+        run: yarn build
 
       - name: Zip the app
         run: |
           mkdir -p bundle
-          cp -r dist package.json package-lock.json ecosystem.config.js node_modules bundle/
+          cp -r dist package.json yarn.lock ecosystem.config.js node_modules bundle/
           cd bundle && zip -r ../$ZIP_FILE . && cd ..
 
       - name: Configure AWS credentials
@@ -41,8 +41,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload zip to S3
-        run: |
-          aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
+        run: aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
 
       - name: Create Elastic Beanstalk App Version
         run: |
@@ -58,5 +57,4 @@ jobs:
             --version-label $VERSION_LABEL
 
       - name: Clean up pipeline artifacts
-        run: |
-          rm -rf $ZIP_FILE bundle
+        run: rm -rf $ZIP_FILE bundle
