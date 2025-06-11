@@ -21,14 +21,14 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies with Yarn
-        run: yarn install
-
-      - name: Build the NestJS app
-        run: yarn build
+#      - name: Install dependencies with Yarn
+#        run: yarn install
+#
+#      - name: Build the NestJS app
+#        run: yarn build
 
       - name: Zip the app
-        run: zip -r deploy_package.zip . -x '*.git*'
+        run: zip -r application_package.zip . -x '*.git*'
 #        run: |
 #          mkdir -p bundle
 #          cp -r dist package.json yarn.lock ecosystem.config.js node_modules bundle/
@@ -42,15 +42,16 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload zip to S3
-        run: aws s3 cp deploy_package.zip s3://${{ secrets.S3_BUCKET }}/deploy_package.zip
+        run: | 
+          aws s3 cp application_package.zip s3://${{ secrets.S3_BUCKET }}/application_package.zip
 #        run: aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
 
-      - name: Create Elastic Beanstalk App Version
+      - name: Create/ Update Elastic Beanstalk App Version
         run: |
           aws elasticbeanstalk create-application-version \
             --application-name ${{ secrets.EB_APP_NAME }} \
             --version-label $VERSION_LABEL \
-            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=deploy_package.zip
+            --source-bundle S3Bucket=${{ secrets.S3_BUCKET }},S3Key=application_package.zip
 
       - name: Deploy to Elastic Beanstalk
         run: |
@@ -59,4 +60,4 @@ jobs:
             --version-label $VERSION_LABEL
 
       - name: Clean up pipeline artifacts
-        run: rm -rf $ZIP_FILE bundle
+        run: rm -rf application_package.zip
