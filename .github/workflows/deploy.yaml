@@ -20,18 +20,8 @@ jobs:
         with:
           node-version: '22'
 
-#      - name: Install dependencies with Yarn
-#        run: yarn install
-#
-#      - name: Build the NestJS app
-#        run: yarn build
-
       - name: Zip the app
         run: zip -r application_package.zip . -x '*.git*'
-#        run: |
-#          mkdir -p bundle
-#          cp -r dist package.json yarn.lock ecosystem.config.js node_modules bundle/
-#          cd bundle && zip -r ../$ZIP_FILE . && cd ..
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -43,7 +33,6 @@ jobs:
       - name: Upload zip to S3
         run: | 
           aws s3 cp application_package.zip s3://${{ secrets.S3_BUCKET }}/application_package.zip
-#        run: aws s3 cp $ZIP_FILE s3://${{ secrets.S3_BUCKET }}/$ZIP_FILE
 
       - name: Create/ Update Elastic Beanstalk App Version
         run: |
