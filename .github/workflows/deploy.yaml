@@ -1,4 +1,4 @@
-name: Deploy to AWS Elastic Beanstalk
+name: Deploy Nest.js app to AWS Elastic Beanstalk
 
 on:
   push:
@@ -33,7 +33,6 @@ jobs:
       - name: Zip deployable files
         run: |
           zip -r application_package.zip . -x "node_modules/*" ".git/*" "test/*" "src/*" "README.md" "*.zip"
-
 
       - name: Zip the app
         run: zip -r application_package.zip . -x '*.git*'
