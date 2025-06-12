@@ -9,6 +9,6 @@ async function bootstrap() {
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('hbs');
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 5000);
 }
-bootstrap().then(() => console.log(`Server is running on port ${process.env.PORT ?? 3000}`)).catch(err => console.error(err));
+bootstrap().then(() => console.log(`Server is running on port ${process.env.PORT ?? 5000}`)).catch(err => console.error(err));
