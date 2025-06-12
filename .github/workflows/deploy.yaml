@@ -20,6 +20,21 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build the app
+        run: yarn build
+
+      - name: Add Procfile
+        run: | 
+          echo "web: yarn start:prod" > Procfile
+
+      - name: Zip deployable files
+        run: |
+          zip -r application_package.zip . -x "node_modules/*" ".git/*" "test/*" "src/*" "README.md" "*.zip"
+
+
       - name: Zip the app
         run: zip -r application_package.zip . -x '*.git*'
 
