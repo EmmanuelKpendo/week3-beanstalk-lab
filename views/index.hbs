@@ -1,4 +1,4 @@
-<!-- players.hbs -->
+<!-- index.hbs -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,7 +45,7 @@
 
 <div id="player-list">
     {{#each players}}
-        <div>
+        <div class="card">
             <strong>{{name}}</strong><br>
             Club: {{club}}<br>
             Country: {{country}}
@@ -58,7 +58,7 @@
         const players = await res.json();
         const container = document.getElementById('player-list');
         container.innerHTML = players.map(p => `
-          <div>
+          <div class="card">
             <strong>${p.name}</strong><br>
  Club: ${p.club}<br>
             Country: ${p.country}
